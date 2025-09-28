@@ -1,11 +1,12 @@
 from fastapi import FastAPI, HTTPException
-from typing import List
+from typing import List, Optional
 from app.models import InternshipCreate, StudentCreate, RecommendationRequest, InternshipResponse, StudentResponse
 from app.database import setup_database, insert_internship, insert_student, get_all_internships, get_all_students, get_internship_by_id, get_student_by_id, load_csv_to_db
 from app.recommender import Recommender
 from app.utils import str_to_list
 import threading
 import os
+from datetime import datetime
 import logging
 
 logger = logging.getLogger("uvicorn")
@@ -16,6 +17,17 @@ setup_database()
 
 recommender = Recommender()
 model_lock = threading.Lock()
+
+
+def parse_date(date_str: Optional[str]) -> Optional[str]:
+    if not date_str or date_str.strip() == "":
+        return None
+    try:
+        dt = datetime.fromisoformat(date_str)
+        return dt.date().isoformat()
+    except ValueError:
+        return None
+
 
 def refresh_model():
     internships_raw = get_all_internships()
@@ -39,9 +51,11 @@ def refresh_model():
     with model_lock:
         recommender.fit(internships_list)
 
+
 @app.get("/")
 def read_root():
     return {"message": "Candidate–Internship Matching System API is running."}
+
 
 @app.on_event("startup")
 def startup_event():
@@ -58,16 +72,19 @@ def startup_event():
     refresh_model()
     logger.info("Application startup completed")
 
+
 @app.post("/add_internship", response_model=InternshipResponse)
 def add_internship(internship: InternshipCreate):
     insert_internship(internship.dict())
     refresh_model()
     return internship
 
+
 @app.post("/add_student", response_model=StudentResponse)
 def add_student(student: StudentCreate):
     insert_student(student.dict())
     return student
+
 
 @app.post("/recommend", response_model=List[InternshipResponse])
 def recommend_internships(req: RecommendationRequest):
@@ -93,8 +110,13 @@ def recommend_internships(req: RecommendationRequest):
     with model_lock:
         recommendations = recommender.recommend_internships(student_profile)
 
-    response = [InternshipResponse(**rec) for rec in recommendations]
+    response = []
+    for rec in recommendations:
+        rec["hiring_since"] = parse_date(rec.get("hiring_since"))
+        rec["opportunity_date"] = parse_date(rec.get("opportunity_date"))
+        response.append(InternshipResponse(**rec))
     return response
+
 
 @app.get("/match_candidates/{internship_id}", response_model=List[StudentResponse])
 def match_candidates(internship_id: int):
@@ -140,4 +162,3 @@ def match_candidates(internship_id: int):
         matched_students = recommender.match_candidates(internship_profile, students_list)
 
     return [StudentResponse(**student) for student in matched_students]
-
