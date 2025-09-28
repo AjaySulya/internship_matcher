@@ -36,8 +36,14 @@ def refresh_model():
     with model_lock:
         recommender.fit(internships_list)
 
+from app.database import setup_database, load_csv_to_db, get_all_internships
+
 @app.on_event("startup")
 def startup_event():
+    setup_database()
+    if not get_all_internships():  # If empty
+        load_csv_to_db("data/internships.csv", "internships")
+        load_csv_to_db("data/students.csv", "students")
     refresh_model()
 
 @app.post("/add_internship", response_model=InternshipResponse)
