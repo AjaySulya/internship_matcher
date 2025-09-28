@@ -1,10 +1,14 @@
 from fastapi import FastAPI, HTTPException
 from typing import List
 from app.models import InternshipCreate, StudentCreate, RecommendationRequest, InternshipResponse, StudentResponse
-from app.database import setup_database, insert_internship, insert_student, get_all_internships, get_all_students, get_internship_by_id, get_student_by_id
+from app.database import setup_database, insert_internship, insert_student, get_all_internships, get_all_students, get_internship_by_id, get_student_by_id, load_csv_to_db
 from app.recommender import Recommender
 from app.utils import str_to_list
 import threading
+import os
+import logging
+
+logger = logging.getLogger("uvicorn")
 
 app = FastAPI(title="Candidate–Internship Matching System")
 
@@ -15,7 +19,6 @@ model_lock = threading.Lock()
 
 def refresh_model():
     internships_raw = get_all_internships()
-    # Convert DB rows to dicts
     internships_list = []
     for row in internships_raw:
         internships_list.append({
@@ -36,15 +39,24 @@ def refresh_model():
     with model_lock:
         recommender.fit(internships_list)
 
-from app.database import setup_database, load_csv_to_db, get_all_internships
+@app.get("/")
+def read_root():
+    return {"message": "Candidate–Internship Matching System API is running."}
 
 @app.on_event("startup")
 def startup_event():
+    logger.info("Starting up application")
     setup_database()
-    if not get_all_internships():  # If empty
-        load_csv_to_db("data/internships.csv", "internships")
-        load_csv_to_db("data/students.csv", "students")
+    try:
+        if not get_all_internships():
+            base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+            load_csv_to_db(os.path.join(base_dir, "data", "internships.csv"), "internships")
+            load_csv_to_db(os.path.join(base_dir, "data", "students.csv"), "students")
+            logger.info("Loaded CSV data into database")
+    except Exception as e:
+        logger.error(f"Error loading CSV files: {e}")
     refresh_model()
+    logger.info("Application startup completed")
 
 @app.post("/add_internship", response_model=InternshipResponse)
 def add_internship(internship: InternshipCreate):
@@ -81,10 +93,7 @@ def recommend_internships(req: RecommendationRequest):
     with model_lock:
         recommendations = recommender.recommend_internships(student_profile)
 
-    # Convert to response format
-    response = []
-    for rec in recommendations:
-        response.append(InternshipResponse(**rec))
+    response = [InternshipResponse(**rec) for rec in recommendations]
     return response
 
 @app.get("/match_candidates/{internship_id}", response_model=List[StudentResponse])
@@ -131,3 +140,4 @@ def match_candidates(internship_id: int):
         matched_students = recommender.match_candidates(internship_profile, students_list)
 
     return [StudentResponse(**student) for student in matched_students]
+
