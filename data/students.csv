@@ -1,0 +1,11 @@
+student_id,name,location,skills,degree,branch,year,resume_text,preferred_internship_type,availability_duration
+101,Alice Sharma,Bangalore,"Python;SQL;APIs","B.Tech","Computer Science",2025,"Experienced Python developer skilled in backend APIs",Remote,3 months
+102,Rahul Mehta,Mumbai,"Excel;SQL;Tableau","B.Sc","Data Science",2024,"Data enthusiast with strong analytical skills",On-site,6 months
+103,Neha Singh,Delhi,"HTML;CSS;JavaScript","B.Tech","Information Technology",2025,"Web developer with front-end expertise",Remote,4 months
+104,Arjun Kumar,Hyderabad,"Python;Machine Learning;TensorFlow","M.Tech","Artificial Intelligence",2025,"Focused on AI and ML research projects",Hybrid,6 months
+105,Anjali Patel,Chennai,"Network Security;Python;Linux","B.E","Cybersecurity",2024,"Cybersecurity intern with practical Linux experience",On-site,5 months
+106,Devansh Gupta,Pune,"Java;Spring;Microservices","B.Tech","Software Engineering",2025,"Backend developer with microservices architecture knowledge",Remote,3 months
+107,Sneha Reddy,Bangalore,"Data Analysis;R;SQL","M.Sc","Statistics",2024,"Statistical analysis and data visualization expert",Hybrid,4 months
+108,Manish Joshi,Noida,"C++;Embedded Systems;IoT","B.Tech","Electronics",2025,"Embedded systems developer with IoT project experience",On-site,6 months
+109,Priya Nair,Kochi,"Digital Marketing;SEO;Content Creation","BBA","Marketing",2024,"Creative digital marketer with SEO skills",Remote,3 months
+110,Vikram Singh,Jaipur,"Project Management;Agile;Scrum","MBA","Business Administration",2025,"Aspiring project manager with Agile certification",Hybrid,6 months
